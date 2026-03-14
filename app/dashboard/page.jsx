@@ -22,6 +22,10 @@ export default function Dashboard() {
     });
 
     useEffect(() => {
+        fetchData();
+    }, []);
+
+    useEffect(() => {
         if (user && user.role === 'donor') {
             setupNotifications();
             calculateEligibility(user.lastDonationDate);
@@ -37,7 +41,7 @@ export default function Dashboard() {
         const lastDate = new Date(lastDateStr);
         const today = new Date();
         const diffTime = Math.abs(today - lastDate);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
         if (diffDays >= 56) {
             setEligibilityData({ eligible: true, daysRemaining: 0 });
@@ -215,33 +219,33 @@ export default function Dashboard() {
                                 <div className="space-y-3 w-full max-w-md">
                                     <div>
                                         <label className="text-xs text-gray-500 font-medium">Full Name</label>
-                                        <input type="text" value={profileForm.name} onChange={e => setProfileForm({...profileForm, name: e.target.value})} className="w-full text-sm border-gray-300 rounded-lg p-2 focus:ring-red-500 focus:border-red-500 bg-gray-50 border text-gray-900" />
+                                        <input type="text" value={profileForm.name} onChange={e => setProfileForm({ ...profileForm, name: e.target.value })} className="w-full text-sm border-gray-300 rounded-lg p-2 focus:ring-red-500 focus:border-red-500 bg-gray-50 border text-gray-900" />
                                     </div>
                                     <div>
                                         <label className="text-xs text-gray-500 font-medium">Email Address</label>
-                                        <input type="email" value={profileForm.email} onChange={e => setProfileForm({...profileForm, email: e.target.value})} className="w-full text-sm border-gray-300 rounded-lg p-2 focus:ring-red-500 focus:border-red-500 bg-gray-50 border text-gray-900" />
+                                        <input type="email" value={profileForm.email} onChange={e => setProfileForm({ ...profileForm, email: e.target.value })} className="w-full text-sm border-gray-300 rounded-lg p-2 focus:ring-red-500 focus:border-red-500 bg-gray-50 border text-gray-900" />
                                     </div>
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
                                             <label className="text-xs text-gray-500 font-medium">Phone Number</label>
-                                            <input type="tel" value={profileForm.phone} onChange={e => setProfileForm({...profileForm, phone: e.target.value})} className="w-full text-sm border-gray-300 rounded-lg p-2 focus:ring-red-500 focus:border-red-500 bg-gray-50 border text-gray-900" />
+                                            <input type="tel" value={profileForm.phone} onChange={e => setProfileForm({ ...profileForm, phone: e.target.value })} className="w-full text-sm border-gray-300 rounded-lg p-2 focus:ring-red-500 focus:border-red-500 bg-gray-50 border text-gray-900" />
                                         </div>
                                         <div>
                                             <label className="text-xs text-gray-500 font-medium">Blood Group</label>
-                                            <select value={profileForm.bloodGroup} onChange={e => setProfileForm({...profileForm, bloodGroup: e.target.value})} className="w-full text-sm border-gray-300 rounded-lg p-2 focus:ring-red-500 focus:border-red-500 bg-gray-50 border text-gray-900">
+                                            <select value={profileForm.bloodGroup} onChange={e => setProfileForm({ ...profileForm, bloodGroup: e.target.value })} className="w-full text-sm border-gray-300 rounded-lg p-2 focus:ring-red-500 focus:border-red-500 bg-gray-50 border text-gray-900">
                                                 {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(bg => <option key={bg} value={bg}>{bg}</option>)}
                                             </select>
                                         </div>
                                     </div>
                                     <div>
                                         <label className="text-xs text-gray-500 font-medium">Location</label>
-                                        <input type="text" value={profileForm.locationName} onChange={e => setProfileForm({...profileForm, locationName: e.target.value})} className="w-full text-sm border-gray-300 rounded-lg p-2 focus:ring-red-500 focus:border-red-500 bg-gray-50 border text-gray-900" />
+                                        <input type="text" value={profileForm.locationName} onChange={e => setProfileForm({ ...profileForm, locationName: e.target.value })} className="w-full text-sm border-gray-300 rounded-lg p-2 focus:ring-red-500 focus:border-red-500 bg-gray-50 border text-gray-900" />
                                     </div>
                                     <div className="flex gap-2 pt-2">
                                         <button onClick={handleProfileUpdate} disabled={updating} className="flex-1 bg-red-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-red-700 flex justify-center items-center gap-1 transition">
                                             {updating ? <Loader2 className="animate-spin h-4 w-4" /> : <><Save size={14} /> Save Changes</>}
                                         </button>
-                                        <button onClick={() => { setIsEditingProfile(false); setProfileForm({name: user.name || '', email: user.email || '', phone: user.phone || '', bloodGroup: user.bloodGroup || '', locationName: user.locationName || ''}); }} disabled={updating} className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 flex justify-center items-center gap-1 transition">
+                                        <button onClick={() => { setIsEditingProfile(false); setProfileForm({ name: user.name || '', email: user.email || '', phone: user.phone || '', bloodGroup: user.bloodGroup || '', locationName: user.locationName || '' }); }} disabled={updating} className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 flex justify-center items-center gap-1 transition">
                                             <X size={14} /> Cancel
                                         </button>
                                     </div>
@@ -282,7 +286,7 @@ export default function Dashboard() {
                                         {eligibilityData.eligible ? 'Eligible to Donate' : `Next eligible in ${eligibilityData.daysRemaining} days`}
                                     </div>
                                 </div>
-                                <button 
+                                <button
                                     onClick={() => setIsEditingDate(!isEditingDate)}
                                     className="text-xs text-gray-400 hover:text-red-500 underline underline-offset-2 flex items-center gap-1 transition"
                                 >
@@ -290,14 +294,14 @@ export default function Dashboard() {
                                 </button>
                                 {isEditingDate && (
                                     <div className="bg-white border shadow-md p-3 rounded-xl flex items-center gap-2 mt-1 absolute z-10 right-0 top-16 md:right-auto md:top-auto">
-                                        <input 
-                                            type="date" 
+                                        <input
+                                            type="date"
                                             className="text-sm border-gray-300 rounded-lg p-1.5 focus:ring-red-500 focus:border-red-500 bg-gray-50 text-gray-900 border"
                                             value={newDonationDate}
                                             onChange={(e) => setNewDonationDate(e.target.value)}
                                             max={new Date().toISOString().split('T')[0]} // Prevents future dates
                                         />
-                                        <button 
+                                        <button
                                             onClick={updateDonationDate}
                                             disabled={updating}
                                             className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition"
