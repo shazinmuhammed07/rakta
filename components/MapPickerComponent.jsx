@@ -85,14 +85,14 @@ const MapPickerComponent = ({ onLocationSelect, defaultLocation, initialLocation
                     type="button"
                     onClick={handleGetCurrentLocation}
                     disabled={isLocating}
-                    className="p-3 bg-red-600/90 text-white rounded-full shadow-lg hover:bg-red-500 transition-all active:scale-95 disabled:opacity-70 disabled:animate-pulse flex items-center justify-center backdrop-blur-md"
+                    className="p-2 sm:p-3 bg-red-600/90 text-white rounded-full shadow-lg hover:bg-red-500 transition-all active:scale-95 disabled:opacity-70 disabled:animate-pulse flex items-center justify-center backdrop-blur-md"
                     title="Use Current Location"
                 >
-                    <LocateFixed className={`w-5 h-5 ${isLocating ? 'animate-spin' : ''}`} />
+                    <LocateFixed className={`w-4 h-4 sm:w-5 sm:h-5 ${isLocating ? 'animate-spin' : ''}`} />
                 </button>
             </div>
 
-            <div className="absolute top-4 left-4 z-[400] bg-black/60 backdrop-blur-md text-white/90 px-4 py-2 rounded-lg text-sm border border-red-500/30 max-w-[250px] truncate shadow-xl">
+            <div className="absolute top-4 left-4 z-[400] bg-black/60 backdrop-blur-md text-white/90 px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm border border-red-500/30 max-w-[calc(100%-134px)] sm:max-w-[250px] truncate shadow-xl">
                 {position ? (locationName || "Location Selected") : "Click map to set location"}
             </div>
 
@@ -100,7 +100,7 @@ const MapPickerComponent = ({ onLocationSelect, defaultLocation, initialLocation
                 center={mapCenter}
                 zoom={zoom}
                 scrollWheelZoom={true}
-                className="w-full h-[350px] z-0"
+                className="w-full h-full z-0"
             >
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

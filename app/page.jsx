@@ -13,7 +13,7 @@ const FeatureCard = ({ icon: Icon, title, description, delay }) => {
     }, [delay]);
 
     return (
-        <div className={`p-8 rounded-3xl bg-white/60 backdrop-blur-xl border border-white/80 shadow-xl shadow-red-900/5 transition-all duration-700 ease-out transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'} hover:-translate-y-2 hover:shadow-2xl hover:bg-white/90 group`}>
+        <div className={`p-4 xs:p-5 sm:p-6 md:p-8 rounded-3xl bg-white/60 backdrop-blur-xl border border-white/80 shadow-xl shadow-red-900/5 transition-all duration-700 ease-out transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'} hover:-translate-y-2 hover:shadow-2xl hover:bg-white/90 group`}>
             <div className="w-14 h-14 rounded-2xl bg-red-100/80 flex items-center justify-center text-red-600 mb-6 group-hover:scale-110 transition-transform duration-300 shadow-inner">
                 <Icon className="w-7 h-7" />
             </div>
@@ -39,7 +39,7 @@ export default function LandingPage() {
                 <div className="absolute bottom-[-20%] left-[20%] w-[60%] h-[60%] bg-orange-300/20 rounded-full blur-[120px] mix-blend-multiply animate-blob animation-delay-4000"></div>
             </div>
 
-            <main className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-32 flex-1 flex flex-col items-center justify-center">
+            <main className="relative z-10 container mx-auto px-3 xs:px-4 sm:px-6 lg:px-8 pt-10 xs:pt-16 sm:pt-20 pb-16 xs:pb-24 sm:pb-32 flex-1 flex flex-col items-center justify-center">
                 
                 {/* Hero Section */}
                 <div className={`text-center max-w-4xl mx-auto transition-all duration-1000 ease-out ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
@@ -48,7 +48,7 @@ export default function LandingPage() {
                         <span className="text-sm font-semibold text-red-700 tracking-wide uppercase">Save a Life Today</span>
                     </div>
                     
-                    <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 tracking-tight leading-[1.15] mb-8">
+                    <h1 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-slate-900 tracking-tight leading-[1.15] mb-8">
                         Connect with donors.<br />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-rose-500">
                             Give the gift of life.

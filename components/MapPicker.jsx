@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 const MapPickerComponent = dynamic(() => import('./MapPickerComponent'), {
     ssr: false,
     loading: () => (
-        <div className="w-full h-[350px] bg-neutral-900/50 rounded-xl border border-red-500/20 flex flex-col items-center justify-center animate-pulse glass-panel">
+        <div className="w-full h-[250px] sm:h-[300px] md:h-[350px] bg-neutral-900/50 rounded-xl border border-red-500/20 flex flex-col items-center justify-center animate-pulse glass-panel">
             <div className="w-10 h-10 border-4 border-red-500 border-t-transparent rounded-full animate-spin mb-4"></div>
             <p className="text-red-400">Loading Map...</p>
         </div>
@@ -14,5 +14,9 @@ const MapPickerComponent = dynamic(() => import('./MapPickerComponent'), {
 });
 
 export default function MapPicker({ onLocationSelect, defaultLocation, initialLocationName }) {
-    return <MapPickerComponent onLocationSelect={onLocationSelect} defaultLocation={defaultLocation} initialLocationName={initialLocationName} />;
+    return (
+        <div className="h-[250px] sm:h-[300px] md:h-[350px]">
+            <MapPickerComponent onLocationSelect={onLocationSelect} defaultLocation={defaultLocation} initialLocationName={initialLocationName} />
+        </div>
+    );
 }

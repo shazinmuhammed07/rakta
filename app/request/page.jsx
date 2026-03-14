@@ -156,7 +156,7 @@ export default function SubmitRequest() {
 
                             <div className="col-span-1 md:col-span-2">
                                 <label className="block text-sm font-semibold text-gray-700 mb-1">Hospital / Request Location</label>
-                                <div className="h-[350px] w-full mt-1">
+                                <div className="w-full mt-1">
                                     <MapPicker
                                         onLocationSelect={(loc) => setFormData({ ...formData, location: loc })}
                                         initialLocationName={formData.location.name}

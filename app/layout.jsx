@@ -8,6 +8,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata = {
     title: "Rakta | Connecting Blood Donors with Patients",
     description: "A modern platform connecting blood donors with patients who urgently need blood.",
+    viewport: "width=device-width, initial-scale=1, maximum-scale=5",
 };
 
 export default function RootLayout({ children }) {

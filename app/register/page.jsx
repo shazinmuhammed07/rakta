@@ -102,7 +102,7 @@ export default function Register() {
                         {/* Account Type Selection */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Account Type</label>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
                                 <button
                                     type="button"
                                     onClick={() => setFormData({ ...formData, role: 'donor' })}
@@ -171,7 +171,7 @@ export default function Register() {
                             </InputWrapper>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Blood Group</label>
                                 <div className="mt-1">

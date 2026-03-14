@@ -51,14 +51,14 @@ export default function Navbar() {
     return (
         <nav className="sticky top-0 z-50 w-full backdrop-blur-md bg-white/80 border-b border-gray-100 shadow-sm transition-all">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between h-20 items-center">
+                <div className="flex justify-between h-16 md:h-20 items-center">
 
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-2 group">
                         <div className="bg-red-500 text-white p-2 rounded-xl group-hover:bg-red-600 transition-colors shadow-sm shadow-red-200">
                             <Droplet size={24} fill="currentColor" />
                         </div>
-                        <span className="font-bold text-2xl tracking-tight text-gray-900">Rakta</span>
+                        <span className="font-bold text-xl sm:text-2xl tracking-tight text-gray-900">Rakta</span>
                     </Link>
 
                     {/* Desktop Navigation */}
@@ -104,7 +104,7 @@ export default function Navbar() {
                                     </Link>
                                     <Link
                                         href="/register"
-                                        className="text-sm font-medium bg-red-600 text-white px-5 py-2.5 rounded-full hover:bg-red-700 transition-all shadow-md shadow-red-200 hover:shadow-lg hover:-translate-y-0.5"
+                                        className="text-sm font-medium bg-red-600 text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-full hover:bg-red-700 transition-all shadow-md shadow-red-200 hover:shadow-lg hover:-translate-y-0.5"
                                     >
                                         Sign up
                                     </Link>

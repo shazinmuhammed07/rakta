@@ -13,8 +13,8 @@ import { renderToStaticMarkup } from 'react-dom/server';
 // Create custom icons showing blood drop and hospital
 const renderHospitalIcon = () => divIcon({
     html: renderToStaticMarkup(
-        <div className="bg-red-600 rounded-full p-2 border-2 border-white shadow-lg flex items-center justify-center -ml-3 -mt-3 w-8 h-8">
-            <Hospital className="w-5 h-5 text-white" />
+        <div className="bg-red-600 rounded-full p-2 border-2 border-white shadow-lg flex items-center justify-center -ml-3 -mt-3 w-8 h-8 sm:w-10 sm:h-10">
+            <Hospital className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
         </div>
     ),
     className: 'custom-leaflet-icon',
@@ -54,7 +54,7 @@ const MapDisplayComponent = ({ centerPosition, donorPositions, radius = 10000 })
                 center={centerPos}
                 zoom={13}
                 scrollWheelZoom={true}
-                className="w-full h-[400px] z-0"
+                className="w-full h-full z-0"
             >
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -87,7 +87,7 @@ const MapDisplayComponent = ({ centerPosition, donorPositions, radius = 10000 })
                         icon={renderDonorIcon(donor.bloodGroup)}
                     >
                         <Popup>
-                            <div className="p-1 min-w-[120px]">
+                            <div className="p-1 min-w-[100px] sm:min-w-[120px]">
                                 <p className="font-bold text-gray-900 border-b pb-1 mb-1">{donor.name}</p>
                                 <p className="text-sm text-gray-700">Blood Group: <span className="font-bold text-red-600">{donor.bloodGroup}</span></p>
                                 <p className="text-sm text-gray-700 mt-1">Phone: {donor.phone}</p>
