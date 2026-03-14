@@ -1,70 +1,71 @@
 import { NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
-import connectToDatabase from '@/lib/mongodb';
-import User from '@/models/User';
-import { SignJWT } from 'jose';
+import { createClient } from '@/utils/supabase/server';
 
 export async function POST(request) {
     try {
-        await connectToDatabase();
-        const { name, phone, bloodGroup, location, locationName, password, role } = await request.json();
+        const { name, email, phone, bloodGroup, location, locationName, password, role } = await request.json();
 
         // Validate inputs
-        if (!name || !phone || !bloodGroup || !location || !location.coordinates || !password) {
+        if (!name || !email || !phone || !bloodGroup || !location || !location.coordinates || !password) {
             return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
         }
 
-        // Check if user exists
-        const existingUser = await User.findOne({ phone });
-        if (existingUser) {
-            return NextResponse.json({ error: 'Phone number already registered' }, { status: 400 });
-        }
+        const supabase = await createClient();
 
-        // Hash password
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
-        // Create user
-        const user = await User.create({
-            name,
-            phone,
-            bloodGroup,
-            location,
-            locationName,
-            password: hashedPassword,
-            role: role || 'donor',
+        // Register user via Supabase Auth
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: {
+                    name,
+                    phone,
+                    bloodGroup,
+                    role: role || 'donor'
+                }
+            }
         });
 
-        // Create JWT Token
-        const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-        const token = await new SignJWT({ id: user._id, role: user.role })
-            .setProtectedHeader({ alg: 'HS256' })
-            .setIssuedAt()
-            .setExpirationTime('30d')
-            .sign(secret);
+        if (authError) {
+            return NextResponse.json({ error: authError.message }, { status: 400 });
+        }
 
-        const response = NextResponse.json({
+        // Extract latitude and longitude from location object
+        const longitude = Array.isArray(location?.coordinates) ? location.coordinates[0] : null;
+        const latitude = Array.isArray(location?.coordinates) ? location.coordinates[1] : null;
+
+        // Insert into public.users table exactly matching the schema
+        const { data: profile, error: dbError } = await supabase
+            .from('users')
+            .insert([{
+                id: authData.user.id,
+                full_name: name,
+                phone,
+                blood_group: bloodGroup,
+                account_type: role || 'donor',
+                latitude,
+                longitude
+            }])
+            .select()
+            .single();
+
+        if (dbError) {
+            console.error('Insert error details:', dbError);
+            return NextResponse.json({ error: dbError.message || 'Failed to finish user profile creation.' }, { status: 500 });
+        }
+
+        return NextResponse.json({
             message: 'Registration successful',
             user: {
-                id: user._id,
-                name: user.name,
-                role: user.role,
-                bloodGroup: user.bloodGroup,
+                id: authData.user.id,
+                full_name: profile?.full_name || name,
+                account_type: profile?.account_type || role || 'donor',
+                blood_group: profile?.blood_group || bloodGroup,
             }
         }, { status: 201 });
 
-        // Set cookie
-        response.cookies.set('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 30 * 24 * 60 * 60, // 30 days
-            path: '/',
-        });
-
-        return response;
     } catch (error) {
         console.error('Registration error:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
     }
 }

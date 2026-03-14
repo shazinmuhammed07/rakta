@@ -1,27 +1,32 @@
 import { NextResponse } from 'next/server';
-import { jwtVerify } from 'jose';
-import connectToDatabase from '@/lib/mongodb';
-import User from '@/models/User';
+import { createClient } from '@/utils/supabase/server';
 
 export async function GET(request) {
     try {
-        const token = request.cookies.get('token')?.value;
+        const supabase = await createClient();
+        const { data: { user }, error } = await supabase.auth.getUser();
 
-        if (!token) {
+        if (error || !user) {
             return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
         }
 
-        const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-        const { payload } = await jwtVerify(token, secret);
+        // Fetch user details from public.users table
+        const { data: profile } = await supabase
+            .from('users')
+            .select('*')
+            .eq('email', user.email)
+            .single();
 
-        await connectToDatabase();
-
-        const user = await User.findById(payload.id).select('-password');
-        if (!user) {
-            return NextResponse.json({ error: 'User not found' }, { status: 404 });
-        }
-
-        return NextResponse.json({ user });
+        return NextResponse.json({ 
+            user: {
+                ...profile,
+                name: profile?.full_name,
+                role: profile?.account_type,
+                bloodGroup: profile?.blood_group,
+                id: user.id,
+                _id: profile?.id || user.id,
+            } 
+        });
     } catch (error) {
         console.error('Auth check error:', error);
         return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });

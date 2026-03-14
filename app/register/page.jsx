@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Droplet, User, Phone, MapPin, Lock, Info, Loader2 } from 'lucide-react';
+import { Droplet, User, Phone, MapPin, Lock, Info, Loader2, Mail } from 'lucide-react';
 import MapPicker from '@/components/MapPicker';
 
 const InputWrapper = ({ icon: Icon, children }) => (
@@ -18,6 +18,7 @@ const InputWrapper = ({ icon: Icon, children }) => (
 export default function Register() {
     const [formData, setFormData] = useState({
         name: '',
+        email: '',
         phone: '',
         bloodGroup: 'A+',
         location: { lat: null, lng: null, name: '' },
@@ -135,6 +136,21 @@ export default function Register() {
                                     placeholder="John Doe"
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                />
+                            </InputWrapper>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Email Address</label>
+                            <InputWrapper icon={Mail}>
+                                <input
+                                    type="email"
+                                    required
+                                    className="focus:ring-red-500 focus:border-red-500 block w-full pl-10 h-12 sm:text-sm border-gray-300 rounded-xl bg-white !text-black border focus:bg-white transition-colors"
+                                    style={{ color: 'black', backgroundColor: 'white' }}
+                                    placeholder="you@example.com"
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                 />
                             </InputWrapper>
                         </div>

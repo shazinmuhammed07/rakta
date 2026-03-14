@@ -1,25 +1,26 @@
 import { NextResponse } from 'next/server';
-import { jwtVerify } from 'jose';
-import connectToDatabase from '@/lib/mongodb';
-import User from '@/models/User';
+import { createClient } from '@/utils/supabase/server';
 
 export async function DELETE(request, context) {
     try {
-        const token = request.cookies.get('token')?.value;
-        if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        const supabase = await createClient();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-        const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-        const { payload } = await jwtVerify(token, secret);
+        if (authError || !user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
 
-        if (payload.role !== 'admin') {
+        const { data: profile } = await supabase.from('users').select('role').eq('phone', user.phone).single();
+
+        if (profile?.role !== 'admin' && user?.user_metadata?.role !== 'admin') {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
         const { params } = context;
         const { id } = await params;
 
-        await connectToDatabase();
-        await User.findByIdAndDelete(id);
+        await supabase.from('users').delete().eq('_id', id);
+        await supabase.from('users').delete().eq('id', id);
 
         return NextResponse.json({ message: 'User deleted successfully' });
     } catch (error) {

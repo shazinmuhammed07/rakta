@@ -1,37 +1,36 @@
 import { NextResponse } from 'next/server';
-import { jwtVerify } from 'jose';
-import connectToDatabase from '@/lib/mongodb';
-import User from '@/models/User';
+import { createClient } from '@/utils/supabase/server';
 
 export async function PUT(request) {
     try {
-        const token = request.cookies.get('token')?.value;
+        const supabase = await createClient();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-        if (!token) {
+        if (authError || !user) {
             return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
         }
 
-        const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-        const { payload } = await jwtVerify(token, secret);
-
-        await connectToDatabase();
         const updateData = await request.json();
 
         // Prevent password/role updates through this route
         delete updateData.password;
         delete updateData.role;
 
-        const user = await User.findByIdAndUpdate(
-            payload.id,
-            { $set: updateData },
-            { new: true, runValidators: true }
-        ).select('-password');
+        // Ensure we update using the correct ID 
+        // We match auth user phone in case public.users id differs
+        const { data: updatedProfile, error: updateError } = await supabase
+            .from('users')
+            .update(updateData)
+            .eq('phone', user.phone)
+            .select()
+            .single();
 
-        if (!user) {
-            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        if (updateError) {
+            console.error('Update DB error:', updateError);
+            return NextResponse.json({ error: 'User not found or update failed' }, { status: 404 });
         }
 
-        return NextResponse.json({ user });
+        return NextResponse.json({ user: updatedProfile });
     } catch (error) {
         console.error('Profile update error:', error);
         return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 });

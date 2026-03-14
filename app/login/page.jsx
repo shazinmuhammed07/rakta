@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Droplet, Phone, Lock, Loader2 } from 'lucide-react';
+import { Droplet, Mail, Lock, Loader2 } from 'lucide-react';
 
 export default function Login() {
-    const [formData, setFormData] = useState({ phone: '', password: '' });
+    const [formData, setFormData] = useState({ email: '', password: '' });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const router = useRouter();
@@ -62,19 +62,19 @@ export default function Login() {
                         )}
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+                            <label className="block text-sm font-medium text-gray-700">Email Address</label>
                             <div className="mt-1 relative rounded-xl shadow-sm">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Phone className="h-5 w-5 text-gray-400" />
+                                    <Mail className="h-5 w-5 text-gray-400" />
                                 </div>
                                 <input
-                                    type="tel"
+                                    type="email"
                                     required
                                     className="focus:ring-red-500 focus:border-red-500 block w-full pl-10 h-12 sm:text-sm border-gray-300 rounded-xl bg-white !text-black border focus:bg-white transition-colors"
                                     style={{ color: 'black', backgroundColor: 'white' }}
-                                    placeholder="Enter your registered number"
-                                    value={formData.phone}
-                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                    placeholder="Enter your email"
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                 />
                             </div>
                         </div>

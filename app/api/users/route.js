@@ -1,27 +1,33 @@
 import { NextResponse } from 'next/server';
-import connectToDatabase from '@/lib/mongodb';
-import User from '@/models/User';
+import { createClient } from '@/utils/supabase/server';
 
 export async function GET(request) {
     try {
-        await connectToDatabase();
-
         const { searchParams } = new URL(request.url);
         const bloodGroup = searchParams.get('bloodGroup');
         const location = searchParams.get('location');
 
-        let query = { role: 'donor', isAvailable: true };
+        const supabase = await createClient();
+
+        let query = supabase
+            .from('users')
+            .select(`id, _id, name, phone, bloodGroup, locationName, isAvailable`)
+            .eq('role', 'donor')
+            .eq('isAvailable', true);
 
         if (bloodGroup) {
-            // Decode URL component to handle '+' properly e.g. 'A+'
-            query.bloodGroup = decodeURIComponent(bloodGroup);
+            query = query.eq('bloodGroup', decodeURIComponent(bloodGroup));
         }
 
         if (location) {
-            query.location = { $regex: new RegExp(location, 'i') };
+            query = query.ilike('locationName', `%${location}%`);
         }
 
-        const donors = await User.find(query).select('-password -role -createdAt -updatedAt');
+        const { data: donors, error } = await query;
+
+        if (error) {
+            throw error;
+        }
 
         return NextResponse.json({ donors });
     } catch (error) {

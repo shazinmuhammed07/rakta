@@ -1,18 +1,29 @@
 import { NextResponse } from 'next/server';
-import { jwtVerify } from 'jose';
-import connectToDatabase from '@/lib/mongodb';
-import BloodRequest from '@/models/BloodRequest';
-import mongoose from 'mongoose';
+import { createClient } from '@/utils/supabase/server';
 
 export async function GET(request) {
     try {
-        await connectToDatabase();
+        const supabase = await createClient();
         const { searchParams } = new URL(request.url);
         const status = searchParams.get('status') || 'pending';
 
-        const requests = await BloodRequest.find({ status })
-            .populate('requester', 'name phone')
-            .sort({ createdAt: -1 });
+        const { data: requests, error } = await supabase
+            .from('requests')
+            .select(`
+                *,
+                requester:users (
+                    _id,
+                    id,
+                    name,
+                    phone
+                )
+            `)
+            .eq('status', status)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            throw error;
+        }
 
         return NextResponse.json({ requests });
     } catch (error) {
@@ -23,64 +34,58 @@ export async function GET(request) {
 
 export async function POST(request) {
     try {
-        const token = request.cookies.get('token')?.value;
+        const supabase = await createClient();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-        if (!token) {
+        if (authError || !user) {
             return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
         }
 
-        const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-        const { payload } = await jwtVerify(token, secret);
-
-        await connectToDatabase();
-
-        const { patientName, bloodGroup, unitsRequired, hospitalName, location, locationName, urgencyLevel } = await request.json();
+        const body = await request.json();
+        const { patientName, bloodGroup, unitsRequired, hospitalName, location, locationName, urgencyLevel } = body;
 
         if (!patientName || !bloodGroup || !unitsRequired || !hospitalName || !location || !location.coordinates) {
             return NextResponse.json({ error: 'Please provide all required fields' }, { status: 400 });
         }
 
-        // Determine radius based on urgency
         const isEmergency = urgencyLevel === 'Emergency';
-        const searchRadius = isEmergency ? 5000 : 10000; // 5km or 10km
 
-        // Find nearby available donors matching blood group
-        const nearbyDonors = await connectToDatabase().then(() => mongoose.model('User').find({
-            bloodGroup: bloodGroup,
-            isAvailable: true,
-            location: {
-                $near: {
-                    $geometry: {
-                        type: "Point",
-                        coordinates: location.coordinates
-                    },
-                    $maxDistance: searchRadius
-                }
-            }
-        }));
+        // Fetch User record to link as requester properly
+        const { data: userProfile } = await supabase.from('users').select('id, _id').eq('email', user.email).single();
+        const requesterId = userProfile?.id || userProfile?._id || user.id;
 
-        const newRequest = await BloodRequest.create({
-            patientName,
-            bloodGroup,
-            unitsRequired,
-            hospitalName,
-            location,
-            locationName,
-            urgencyLevel: urgencyLevel || 'Normal',
-            requester: payload.id, // Authenticated user
-        });
+        // Insert new request
+        const { data: newRequestArray, error: insertError } = await supabase
+            .from('requests')
+            .insert([{
+                patientName,
+                bloodGroup,
+                unitsRequired,
+                hospitalName,
+                location, // Storing as JSON
+                locationName,
+                urgencyLevel: urgencyLevel || 'Normal',
+                status: 'pending',
+                requester: requesterId
+            }])
+            .select();
 
-        // Trigger FCM Notifications to nearby donors
+        if (insertError) throw insertError;
+        const newRequest = newRequestArray?.[0];
+
+        // Find available donors to notify (not filtering by pure distance yet to avoid PostGIS failures)
+        const { data: nearbyDonors, error: donorsError } = await supabase
+            .from('users')
+            .select('fcmToken')
+            .eq('bloodGroup', bloodGroup)
+            .eq('isAvailable', true)
+            .not('fcmToken', 'is', null);
+
         let notificationsSent = 0;
-        const recipientTokens = nearbyDonors
-            .filter(donor => donor.fcmToken) // Only users with tokens
-            .map(donor => donor.fcmToken);
-
-        if (recipientTokens.length > 0) {
+        if (!donorsError && nearbyDonors && nearbyDonors.length > 0) {
+            const recipientTokens = nearbyDonors.map(d => d.fcmToken);
             try {
-                // We'll import dynamically so module loads aren't blocked if env variables are missing
                 const admin = (await import('@/lib/firebaseAdmin')).default;
-
                 const message = {
                     notification: {
                         title: isEmergency ? "🔴 EMERGENCY: Blood Request!" : "Urgent Blood Needed nearby",
@@ -88,20 +93,17 @@ export async function POST(request) {
                     },
                     tokens: recipientTokens,
                 };
-
                 const response = await admin.messaging().sendEachForMulticast(message);
                 notificationsSent = response.successCount;
-                console.log(response.successCount + ' messages were sent successfully');
             } catch (fcmError) {
                 console.error("Error sending FCM notifications:", fcmError);
-                // Don't fail the request completely if notifications fail
             }
         }
 
         return NextResponse.json({
             message: 'Blood request created successfully',
             request: newRequest,
-            nearbyDonorsFound: nearbyDonors.length,
+            nearbyDonorsFound: nearbyDonors?.length || 0,
             notificationsSent
         }, { status: 201 });
     } catch (error) {
