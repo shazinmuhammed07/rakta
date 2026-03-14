@@ -18,8 +18,14 @@ export async function GET(request) {
             .single();
 
         // Fall back to auth metadata if public.users row doesn't exist yet
-        // (e.g. trigger hasn't run, or row was not created)
         const meta = user.user_metadata || {};
+
+        const lat = profile?.latitude ?? (meta.latitude ? parseFloat(meta.latitude) : null);
+        const lng = profile?.longitude ?? (meta.longitude ? parseFloat(meta.longitude) : null);
+        // Build a human-readable location label from coordinates
+        const locationName = (lat && lng)
+            ? `${parseFloat(lat).toFixed(4)}°N, ${parseFloat(lng).toFixed(4)}°E`
+            : null;
 
         return NextResponse.json({ 
             user: {
@@ -31,8 +37,9 @@ export async function GET(request) {
                 bloodGroup: profile?.blood_group || meta.bloodGroup || '',
                 role: profile?.account_type || meta.role || 'donor',
                 lastDonationDate: profile?.last_donation_date || meta.lastDonationDate || null,
-                latitude: profile?.latitude || meta.latitude || null,
-                longitude: profile?.longitude || meta.longitude || null,
+                latitude: lat,
+                longitude: lng,
+                locationName: locationName,
                 isAvailable: profile?.is_available ?? true,
                 fcmToken: profile?.fcm_token || null,
             } 
