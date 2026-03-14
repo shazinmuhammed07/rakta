@@ -17,17 +17,24 @@ export async function GET(request) {
             .eq('id', user.id)
             .single();
 
+        // Fall back to auth metadata if public.users row doesn't exist yet
+        // (e.g. trigger hasn't run, or row was not created)
+        const meta = user.user_metadata || {};
+
         return NextResponse.json({ 
             user: {
-                ...profile,
-                name: profile?.full_name,
-                email: user.email,
-                role: profile?.account_type,
-                bloodGroup: profile?.blood_group,
-                lastDonationDate: profile?.last_donation_date,
-                locationName: profile?.location_name,
                 id: user.id,
                 _id: profile?.id || user.id,
+                name: profile?.full_name || meta.name || '',
+                email: user.email,
+                phone: profile?.phone || meta.phone || '',
+                bloodGroup: profile?.blood_group || meta.bloodGroup || '',
+                role: profile?.account_type || meta.role || 'donor',
+                lastDonationDate: profile?.last_donation_date || meta.lastDonationDate || null,
+                latitude: profile?.latitude || meta.latitude || null,
+                longitude: profile?.longitude || meta.longitude || null,
+                isAvailable: profile?.is_available ?? true,
+                fcmToken: profile?.fcm_token || null,
             } 
         });
     } catch (error) {

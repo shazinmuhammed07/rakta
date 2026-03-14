@@ -12,7 +12,14 @@ export async function POST(request) {
 
         const supabase = await createClient();
 
-        // Register user via Supabase Auth
+        // Extract latitude and longitude from location object
+        const longitude = Array.isArray(location?.coordinates) ? location.coordinates[0] : null;
+        const latitude = Array.isArray(location?.coordinates) ? location.coordinates[1] : null;
+
+        // Register user via Supabase Auth.
+        // All profile data is stored in raw_user_meta_data.
+        // A database trigger (on_auth_user_created) will automatically
+        // insert a matching row into public.users using this metadata.
         const { data: authData, error: authError } = await supabase.auth.signUp({
             email,
             password,
@@ -21,7 +28,10 @@ export async function POST(request) {
                     name,
                     phone,
                     bloodGroup,
-                    role: role || 'donor'
+                    role: role || 'donor',
+                    latitude: latitude?.toString(),
+                    longitude: longitude?.toString(),
+                    lastDonationDate: lastDonationDate || null,
                 }
             }
         });
@@ -30,44 +40,13 @@ export async function POST(request) {
             return NextResponse.json({ error: authError.message }, { status: 400 });
         }
 
-        // Extract latitude and longitude from location object
-        const longitude = Array.isArray(location?.coordinates) ? location.coordinates[0] : null;
-        const latitude = Array.isArray(location?.coordinates) ? location.coordinates[1] : null;
-
-        // Insert into public.users table exactly matching the schema
-        const profileData = {
-            id: authData.user.id,
-            full_name: name,
-            phone,
-            blood_group: bloodGroup,
-            account_type: role || 'donor',
-            latitude,
-            longitude,
-            location_name: locationName
-        };
-
-        if (lastDonationDate) {
-            profileData.last_donation_date = lastDonationDate;
-        }
-
-        const { data: profile, error: dbError } = await supabase
-            .from('users')
-            .insert([profileData])
-            .select()
-            .single();
-
-        if (dbError) {
-            console.error('Insert error details:', dbError);
-            return NextResponse.json({ error: dbError.message || 'Failed to finish user profile creation.' }, { status: 500 });
-        }
-
         return NextResponse.json({
             message: 'Registration successful',
             user: {
                 id: authData.user.id,
-                full_name: profile?.full_name || name,
-                account_type: profile?.account_type || role || 'donor',
-                blood_group: profile?.blood_group || bloodGroup,
+                full_name: name,
+                account_type: role || 'donor',
+                blood_group: bloodGroup,
             }
         }, { status: 201 });
 

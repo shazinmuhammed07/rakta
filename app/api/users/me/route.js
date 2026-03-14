@@ -52,7 +52,6 @@ export async function PUT(request) {
         }
 
         if (dbUpdate.locationName !== undefined) {
-            dbUpdate.location_name = dbUpdate.locationName;
             delete dbUpdate.locationName;
         }
 
