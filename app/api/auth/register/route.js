@@ -35,18 +35,23 @@ export async function POST(request) {
         const latitude = Array.isArray(location?.coordinates) ? location.coordinates[1] : null;
 
         // Insert into public.users table exactly matching the schema
+        const profileData = {
+            id: authData.user.id,
+            full_name: name,
+            phone,
+            blood_group: bloodGroup,
+            account_type: role || 'donor',
+            latitude,
+            longitude
+        };
+
+        if (lastDonationDate) {
+            profileData.last_donation_date = lastDonationDate;
+        }
+
         const { data: profile, error: dbError } = await supabase
             .from('users')
-            .insert([{
-                id: authData.user.id,
-                full_name: name,
-                phone,
-                blood_group: bloodGroup,
-                account_type: role || 'donor',
-                last_donation_date: lastDonationDate || null,
-                latitude,
-                longitude
-            }])
+            .insert([profileData])
             .select()
             .single();
 

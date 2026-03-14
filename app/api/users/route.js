@@ -11,7 +11,7 @@ export async function GET(request) {
 
         let query = supabase
             .from('users')
-            .select(`id, full_name, phone, blood_group, account_type, latitude, longitude`)
+            .select(`id, full_name, phone, blood_group, account_type, latitude, longitude, last_donation_date`)
             .eq('account_type', 'donor'); // Map role to account_type in table
 
         if (bloodGroup) {
@@ -28,8 +28,20 @@ export async function GET(request) {
             throw error;
         }
 
+        // Filter out donors who are ineligible (donated within the last 56 days)
+        const eligibleDonors = dbDonors.filter(donor => {
+            if (!donor.last_donation_date) return true; // Eligible if they've never donated
+            
+            const lastDate = new Date(donor.last_donation_date);
+            const today = new Date();
+            const diffTime = Math.abs(today - lastDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            return diffDays >= 56;
+        });
+
         // Map to expected format
-        const donors = dbDonors.map(d => ({
+        const donors = eligibleDonors.map(d => ({
             _id: d.id, // For compatibility
             id: d.id,
             name: d.full_name,
