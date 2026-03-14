@@ -38,11 +38,12 @@ export async function PATCH(request, context) {
         }
 
         // Fetch user profile to get roles
-        const { data: userProfile } = await supabase.from('users').select('*').eq('phone', user.phone).single();
+        // Fetch user profile to get roles
+        const { data: userProfile } = await supabase.from('users').select('*').eq('id', user.id).single();
         const userId = userProfile?._id || userProfile?.id || user.id;
 
         // Authorization checks
-        if (targetRequest.requester !== userId && userProfile?.role !== 'admin') {
+        if (targetRequest.requester_id !== userId && userProfile?.account_type !== 'admin') {
             return NextResponse.json({ error: 'Not authorized to update this request' }, { status: 403 });
         }
 

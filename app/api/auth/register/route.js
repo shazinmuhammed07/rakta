@@ -3,11 +3,11 @@ import { createClient } from '@/utils/supabase/server';
 
 export async function POST(request) {
     try {
-        const { name, email, phone, bloodGroup, location, locationName, password, role } = await request.json();
+        const { name, email, phone, bloodGroup, location, locationName, password, role, lastDonationDate } = await request.json();
 
         // Validate inputs
         if (!name || !email || !phone || !bloodGroup || !location || !location.coordinates || !password) {
-            return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
+            return NextResponse.json({ error: 'All fields except last donation date are required' }, { status: 400 });
         }
 
         const supabase = await createClient();
@@ -43,6 +43,7 @@ export async function POST(request) {
                 phone,
                 blood_group: bloodGroup,
                 account_type: role || 'donor',
+                last_donation_date: lastDonationDate || null,
                 latitude,
                 longitude
             }])

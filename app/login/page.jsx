@@ -116,11 +116,24 @@ export default function Login() {
                         </div>
                     </form>
 
-                    <div className="mt-6 text-center text-sm text-gray-600">
-                        Don't have an account?{' '}
-                        <Link href="/register" className="font-medium text-red-600 hover:text-red-500">
-                            Sign up
-                        </Link>
+                    <div className="mt-6">
+                        <div className="relative">
+                            <div className="absolute inset-0 flex items-center">
+                                <div className="w-full border-t border-gray-200" />
+                            </div>
+                            <div className="relative flex justify-center text-sm">
+                                <span className="px-2 bg-white text-gray-500">New to Rakta?</span>
+                            </div>
+                        </div>
+
+                        <div className="mt-6">
+                            <Link
+                                href="/register"
+                                className="w-full flex justify-center py-3 px-4 border border-red-200 rounded-xl shadow-sm text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
+                            >
+                                Create an Account
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </div>

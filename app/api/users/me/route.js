@@ -17,11 +17,17 @@ export async function PUT(request) {
         delete updateData.role;
 
         // Ensure we update using the correct ID 
-        // We match auth user phone in case public.users id differs
+        // We map frontend camelCase to snake_case db columns
+        const dbUpdate = { ...updateData };
+        if (dbUpdate.isAvailable !== undefined) {
+            dbUpdate.is_available = dbUpdate.isAvailable;
+            delete dbUpdate.isAvailable;
+        }
+
         const { data: updatedProfile, error: updateError } = await supabase
             .from('users')
-            .update(updateData)
-            .eq('phone', user.phone)
+            .update(dbUpdate)
+            .eq('id', user.id) // safer than phone update if they change phone
             .select()
             .single();
 

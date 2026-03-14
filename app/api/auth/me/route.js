@@ -14,7 +14,7 @@ export async function GET(request) {
         const { data: profile } = await supabase
             .from('users')
             .select('*')
-            .eq('email', user.email)
+            .eq('id', user.id)
             .single();
 
         return NextResponse.json({ 
@@ -23,6 +23,7 @@ export async function GET(request) {
                 name: profile?.full_name,
                 role: profile?.account_type,
                 bloodGroup: profile?.blood_group,
+                lastDonationDate: profile?.last_donation_date,
                 id: user.id,
                 _id: profile?.id || user.id,
             } 

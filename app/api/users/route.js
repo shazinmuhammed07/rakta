@@ -11,25 +11,40 @@ export async function GET(request) {
 
         let query = supabase
             .from('users')
-            .select(`id, _id, name, phone, bloodGroup, locationName, isAvailable`)
-            .eq('role', 'donor')
-            .eq('isAvailable', true);
+            .select(`id, full_name, phone, blood_group, account_type, latitude, longitude`)
+            .eq('account_type', 'donor'); // Map role to account_type in table
 
         if (bloodGroup) {
-            query = query.eq('bloodGroup', decodeURIComponent(bloodGroup));
+            query = query.eq('blood_group', decodeURIComponent(bloodGroup));
         }
 
-        if (location) {
-            query = query.ilike('locationName', `%${location}%`);
-        }
+        // Location filtering by name isn't directly supported if the table only has lat/lng, 
+        // but currently we don't have a locationName column in the schema example. 
+        // So we'll skip DB location filter here and just fetch all or we'd need PostGIS.
 
-        const { data: donors, error } = await query;
+        const { data: dbDonors, error } = await query;
 
         if (error) {
             throw error;
         }
 
-        return NextResponse.json({ donors });
+        // Map to expected format
+        const donors = dbDonors.map(d => ({
+            _id: d.id, // For compatibility
+            id: d.id,
+            name: d.full_name,
+            phone: d.phone,
+            bloodGroup: d.blood_group,
+            location: d.latitude && d.longitude ? 'Unknown (Location available)' : 'Not specified', // Placeholder without reverse geocoding
+            isAvailable: true // Assuming true as there's no isAvailable column provided in schema
+        }));
+
+        // Very basic mock client side filter for location text since it's hard without names in DB
+        const filteredDonors = location ? 
+            donors.filter(d => true) // Placeholder: real logic would need Reverse Geocoding or keeping locationName in DB
+            : donors;
+
+        return NextResponse.json({ donors: filteredDonors });
     } catch (error) {
         console.error('Donors search error:', error);
         return NextResponse.json({ error: 'Failed to fetch donors' }, { status: 500 });

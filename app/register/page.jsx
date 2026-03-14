@@ -24,6 +24,7 @@ export default function Register() {
         location: { lat: null, lng: null, name: '' },
         password: '',
         role: 'donor',
+        lastDonationDate: '',
     });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -188,6 +189,25 @@ export default function Register() {
                             </div>
 
                         </div>
+
+                        {formData.role === 'donor' && (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Last Donation Date (Optional)</label>
+                                <div className="mt-1">
+                                    <input
+                                        type="date"
+                                        className="focus:ring-red-500 focus:border-red-500 block w-full h-12 sm:text-sm border-gray-300 rounded-xl bg-white !text-black border focus:bg-white transition-colors px-3 cursor-pointer"
+                                        style={{ color: 'black', backgroundColor: 'white' }}
+                                        value={formData.lastDonationDate}
+                                        max={new Date().toISOString().split('T')[0]} // Cannot be in the future
+                                        onChange={(e) => setFormData({ ...formData, lastDonationDate: e.target.value })}
+                                    />
+                                </div>
+                                <p className="mt-1 text-xs text-gray-500">
+                                    Helps us determine your eligibility (56 days required between donations).
+                                </p>
+                            </div>
+                        )}
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Select Your Location</label>

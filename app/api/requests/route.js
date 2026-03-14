@@ -58,15 +58,15 @@ export async function POST(request) {
         const { data: newRequestArray, error: insertError } = await supabase
             .from('requests')
             .insert([{
-                patientName,
-                bloodGroup,
-                unitsRequired,
-                hospitalName,
-                location, // Storing as JSON
-                locationName,
-                urgencyLevel: urgencyLevel || 'Normal',
+                patient_name: patientName,
+                blood_group: bloodGroup,
+                units_required: unitsRequired,
+                hospital_name: hospitalName,
+                location: location, // Storing as JSON or as appropriate schema type
+                location_name: locationName,
+                urgency_level: urgencyLevel || 'Normal',
                 status: 'pending',
-                requester: requesterId
+                requester_id: requesterId // Map to proper ID column based on requester ref
             }])
             .select();
 
