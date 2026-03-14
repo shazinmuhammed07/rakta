@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { sendDonorNotificationEmail } from '@/lib/resend';
 
 export async function GET(request) {
     try {
@@ -20,11 +21,8 @@ export async function GET(request) {
             .eq('status', status)
             .order('created_at', { ascending: false });
 
-        if (error) {
-            throw error;
-        }
+        if (error) throw error;
 
-        // Normalize the data to match frontend expectations (camelCase)
         const normalizedRequests = (requests || []).map(req => ({
             ...req,
             patientName: req.patient_name,
@@ -64,11 +62,13 @@ export async function POST(request) {
         }
 
         const isEmergency = urgencyLevel === 'Emergency';
-
-        // Use the authenticated user's ID directly (it matches the users table 'id' column)
         const requesterId = user.id;
 
-        // Insert new request using correct snake_case column names
+        // Extract request coordinates [lng, lat]
+        const reqLng = location.coordinates[0];
+        const reqLat = location.coordinates[1];
+
+        // Insert new blood request
         const { data: newRequestArray, error: insertError } = await supabase
             .from('requests')
             .insert([{
@@ -90,41 +90,94 @@ export async function POST(request) {
         }
         const newRequest = newRequestArray?.[0];
 
-        // Find available donors to notify (using correct snake_case column names)
-        const { data: nearbyDonors, error: donorsError } = await supabase
+        // Fetch the requester's phone number for the email
+        const { data: requesterProfile } = await supabase
             .from('users')
-            .select('fcm_token')
-            .eq('blood_group', bloodGroup)
-            .eq('is_available', true)
-            .not('fcm_token', 'is', null);
+            .select('phone, full_name')
+            .eq('id', requesterId)
+            .single();
+        const requesterPhone = requesterProfile?.phone || user.user_metadata?.phone || '';
 
+        // ----------------------------------------------------------------
+        // Find donors within 10km radius with matching blood group
+        // Uses the get_donors_within_radius() Haversine SQL function
+        // ----------------------------------------------------------------
+        const RADIUS_KM = 10;
+        const { data: nearbyDonors, error: donorsError } = await supabase
+            .rpc('get_donors_within_radius', {
+                req_lat: reqLat,
+                req_lng: reqLng,
+                radius_km: RADIUS_KM,
+                req_blood_group: bloodGroup,
+            });
+
+        if (donorsError) {
+            console.error('Error finding nearby donors:', donorsError);
+        }
+
+        let emailsSent = 0;
         let notificationsSent = 0;
-        if (!donorsError && nearbyDonors && nearbyDonors.length > 0) {
-            const recipientTokens = nearbyDonors.map(d => d.fcm_token).filter(Boolean);
-            if (recipientTokens.length > 0) {
-                try {
+
+        // ----------------------------------------------------------------
+        // Send email notifications to each nearby donor
+        // ----------------------------------------------------------------
+        if (nearbyDonors && nearbyDonors.length > 0) {
+            const emailPromises = nearbyDonors
+                .filter(donor => donor.email && donor.id !== requesterId) // skip requester themselves
+                .map(donor =>
+                    sendDonorNotificationEmail({
+                        donorEmail: donor.email,
+                        donorName: donor.full_name,
+                        bloodGroup,
+                        patientName,
+                        unitsRequired,
+                        hospitalName,
+                        locationName: locationName || '',
+                        urgencyLevel: urgencyLevel || 'Normal',
+                        requesterPhone,
+                    })
+                );
+
+            const results = await Promise.allSettled(emailPromises);
+            emailsSent = results.filter(r => r.status === 'fulfilled' && r.value === true).length;
+        }
+
+        // ----------------------------------------------------------------
+        // Also send FCM push notifications (existing logic, kept as bonus)
+        // ----------------------------------------------------------------
+        try {
+            const { data: fcmDonors } = await supabase
+                .from('users')
+                .select('fcm_token')
+                .eq('blood_group', bloodGroup)
+                .not('fcm_token', 'is', null);
+
+            if (fcmDonors && fcmDonors.length > 0) {
+                const tokens = fcmDonors.map(d => d.fcm_token).filter(Boolean);
+                if (tokens.length > 0) {
                     const admin = (await import('@/lib/firebaseAdmin')).default;
-                    const message = {
+                    const response = await admin.messaging().sendEachForMulticast({
                         notification: {
-                            title: isEmergency ? "🔴 EMERGENCY: Blood Request!" : "Urgent Blood Needed nearby",
+                            title: isEmergency ? "🔴 EMERGENCY: Blood Request!" : "🩸 Blood Needed Nearby",
                             body: `${unitsRequired} units of ${bloodGroup} needed at ${hospitalName}. Can you help?`
                         },
-                        tokens: recipientTokens,
-                    };
-                    const response = await admin.messaging().sendEachForMulticast(message);
+                        tokens,
+                    });
                     notificationsSent = response.successCount;
-                } catch (fcmError) {
-                    console.error("Error sending FCM notifications:", fcmError);
                 }
             }
+        } catch (fcmError) {
+            console.error("FCM notification error:", fcmError);
         }
 
         return NextResponse.json({
             message: 'Blood request created successfully',
             request: newRequest,
             nearbyDonorsFound: nearbyDonors?.length || 0,
-            notificationsSent
+            emailsSent,
+            notificationsSent,
         }, { status: 201 });
+
     } catch (error) {
         console.error('Create request error:', error);
         return NextResponse.json({ error: error.message || 'Failed to create blood request' }, { status: 500 });
