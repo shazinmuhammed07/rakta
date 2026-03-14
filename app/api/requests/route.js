@@ -12,9 +12,8 @@ export async function GET(request) {
             .select(`
                 *,
                 requester:users (
-                    _id,
                     id,
-                    name,
+                    full_name,
                     phone
                 )
             `)
@@ -25,7 +24,23 @@ export async function GET(request) {
             throw error;
         }
 
-        return NextResponse.json({ requests });
+        // Normalize the data to match frontend expectations (camelCase)
+        const normalizedRequests = (requests || []).map(req => ({
+            ...req,
+            patientName: req.patient_name,
+            bloodGroup: req.blood_group,
+            unitsRequired: req.units_required,
+            hospitalName: req.hospital_name,
+            locationName: req.location_name,
+            urgencyLevel: req.urgency_level,
+            requester: req.requester ? {
+                ...req.requester,
+                _id: req.requester.id,
+                name: req.requester.full_name,
+            } : null,
+        }));
+
+        return NextResponse.json({ requests: normalizedRequests });
     } catch (error) {
         console.error('Fetch requests error:', error);
         return NextResponse.json({ error: 'Failed to fetch blood requests' }, { status: 500 });
@@ -50,11 +65,10 @@ export async function POST(request) {
 
         const isEmergency = urgencyLevel === 'Emergency';
 
-        // Fetch User record to link as requester properly
-        const { data: userProfile } = await supabase.from('users').select('id, _id').eq('email', user.email).single();
-        const requesterId = userProfile?.id || userProfile?._id || user.id;
+        // Use the authenticated user's ID directly (it matches the users table 'id' column)
+        const requesterId = user.id;
 
-        // Insert new request
+        // Insert new request using correct snake_case column names
         const { data: newRequestArray, error: insertError } = await supabase
             .from('requests')
             .insert([{
@@ -62,41 +76,46 @@ export async function POST(request) {
                 blood_group: bloodGroup,
                 units_required: unitsRequired,
                 hospital_name: hospitalName,
-                location: location, // Storing as JSON or as appropriate schema type
-                location_name: locationName,
+                location: location,
+                location_name: locationName || '',
                 urgency_level: urgencyLevel || 'Normal',
                 status: 'pending',
-                requester_id: requesterId // Map to proper ID column based on requester ref
+                requester_id: requesterId,
             }])
             .select();
 
-        if (insertError) throw insertError;
+        if (insertError) {
+            console.error('Insert error:', insertError);
+            throw insertError;
+        }
         const newRequest = newRequestArray?.[0];
 
-        // Find available donors to notify (not filtering by pure distance yet to avoid PostGIS failures)
+        // Find available donors to notify (using correct snake_case column names)
         const { data: nearbyDonors, error: donorsError } = await supabase
             .from('users')
-            .select('fcmToken')
-            .eq('bloodGroup', bloodGroup)
-            .eq('isAvailable', true)
-            .not('fcmToken', 'is', null);
+            .select('fcm_token')
+            .eq('blood_group', bloodGroup)
+            .eq('is_available', true)
+            .not('fcm_token', 'is', null);
 
         let notificationsSent = 0;
         if (!donorsError && nearbyDonors && nearbyDonors.length > 0) {
-            const recipientTokens = nearbyDonors.map(d => d.fcmToken);
-            try {
-                const admin = (await import('@/lib/firebaseAdmin')).default;
-                const message = {
-                    notification: {
-                        title: isEmergency ? "🔴 EMERGENCY: Blood Request!" : "Urgent Blood Needed nearby",
-                        body: `${unitsRequired} units of ${bloodGroup} needed at ${hospitalName}. Can you help?`
-                    },
-                    tokens: recipientTokens,
-                };
-                const response = await admin.messaging().sendEachForMulticast(message);
-                notificationsSent = response.successCount;
-            } catch (fcmError) {
-                console.error("Error sending FCM notifications:", fcmError);
+            const recipientTokens = nearbyDonors.map(d => d.fcm_token).filter(Boolean);
+            if (recipientTokens.length > 0) {
+                try {
+                    const admin = (await import('@/lib/firebaseAdmin')).default;
+                    const message = {
+                        notification: {
+                            title: isEmergency ? "🔴 EMERGENCY: Blood Request!" : "Urgent Blood Needed nearby",
+                            body: `${unitsRequired} units of ${bloodGroup} needed at ${hospitalName}. Can you help?`
+                        },
+                        tokens: recipientTokens,
+                    };
+                    const response = await admin.messaging().sendEachForMulticast(message);
+                    notificationsSent = response.successCount;
+                } catch (fcmError) {
+                    console.error("Error sending FCM notifications:", fcmError);
+                }
             }
         }
 
@@ -108,6 +127,6 @@ export async function POST(request) {
         }, { status: 201 });
     } catch (error) {
         console.error('Create request error:', error);
-        return NextResponse.json({ error: 'Failed to create blood request' }, { status: 500 });
+        return NextResponse.json({ error: error.message || 'Failed to create blood request' }, { status: 500 });
     }
 }
