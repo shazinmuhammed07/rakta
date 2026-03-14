@@ -29,6 +29,8 @@ export async function GET(request) {
             message: 'Failed to send. Check server logs.',
             resendKey: process.env.RESEND_API_KEY ? 'SET ✅' : 'MISSING ❌',
             fromEmail: process.env.RESEND_FROM_EMAIL || 'NOT SET',
+            gmailUser: process.env.GMAIL_USER ? 'SET ✅' : 'MISSING ❌',
+            gmailPassword: process.env.GMAIL_APP_PASSWORD ? 'SET ✅' : 'MISSING ❌',
         }, { status: 500 });
     }
 }
