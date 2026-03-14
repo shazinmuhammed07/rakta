@@ -21,9 +21,11 @@ export async function GET(request) {
             user: {
                 ...profile,
                 name: profile?.full_name,
+                email: user.email,
                 role: profile?.account_type,
                 bloodGroup: profile?.blood_group,
                 lastDonationDate: profile?.last_donation_date,
+                locationName: profile?.location_name,
                 id: user.id,
                 _id: profile?.id || user.id,
             } 

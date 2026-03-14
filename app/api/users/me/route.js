@@ -16,6 +16,18 @@ export async function PUT(request) {
         delete updateData.password;
         delete updateData.role;
 
+        // Handle email update separately using Supabase Auth
+        const emailUpdate = updateData.email;
+        delete updateData.email;
+
+        if (emailUpdate && emailUpdate !== user.email) {
+            const { error: emailError } = await supabase.auth.updateUser({ email: emailUpdate });
+            if (emailError) {
+                console.error('Email update failed:', emailError);
+                return NextResponse.json({ error: 'Failed to update email' }, { status: 400 });
+            }
+        }
+
         // Ensure we update using the correct ID 
         // We map frontend camelCase to snake_case db columns
         const dbUpdate = { ...updateData };
@@ -27,6 +39,21 @@ export async function PUT(request) {
         if (dbUpdate.lastDonationDate !== undefined) {
             dbUpdate.last_donation_date = dbUpdate.lastDonationDate;
             delete dbUpdate.lastDonationDate;
+        }
+
+        if (dbUpdate.name !== undefined) {
+            dbUpdate.full_name = dbUpdate.name;
+            delete dbUpdate.name;
+        }
+
+        if (dbUpdate.bloodGroup !== undefined) {
+            dbUpdate.blood_group = dbUpdate.bloodGroup;
+            delete dbUpdate.bloodGroup;
+        }
+
+        if (dbUpdate.locationName !== undefined) {
+            dbUpdate.location_name = dbUpdate.locationName;
+            delete dbUpdate.locationName;
         }
 
         const { data: updatedProfile, error: updateError } = await supabase

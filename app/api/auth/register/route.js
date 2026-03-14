@@ -42,7 +42,8 @@ export async function POST(request) {
             blood_group: bloodGroup,
             account_type: role || 'donor',
             latitude,
-            longitude
+            longitude,
+            location_name: locationName
         };
 
         if (lastDonationDate) {

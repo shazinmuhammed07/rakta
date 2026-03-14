@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader2, Droplet, User, MapPin, Phone, Activity, AlertCircle, CheckCircle2, Bell, ShieldCheck, ShieldAlert, CalendarClock } from 'lucide-react';
+import { Loader2, Droplet, User, MapPin, Phone, Activity, AlertCircle, CheckCircle2, Bell, ShieldCheck, ShieldAlert, CalendarClock, Mail, Edit3, X, Save } from 'lucide-react';
 import Link from 'next/link';
 import { requestNotificationPermissionAndToken } from '@/lib/firebaseClient';
 import MapDisplay from '@/components/MapDisplay';
@@ -16,6 +16,10 @@ export default function Dashboard() {
     const [dashboardDonors, setDashboardDonors] = useState([]);
     const [isEditingDate, setIsEditingDate] = useState(false);
     const [newDonationDate, setNewDonationDate] = useState('');
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
+    const [profileForm, setProfileForm] = useState({
+        name: '', email: '', phone: '', bloodGroup: '', locationName: ''
+    });
 
     useEffect(() => {
         if (user && user.role === 'donor') {
@@ -68,6 +72,13 @@ export default function Dashboard() {
             if (userRes.ok) {
                 const userData = await userRes.json();
                 setUser(userData.user);
+                setProfileForm({
+                    name: userData.user.name || '',
+                    email: userData.user.email || '',
+                    phone: userData.user.phone || '',
+                    bloodGroup: userData.user.bloodGroup || '',
+                    locationName: userData.user.locationName || '',
+                });
             } else {
                 window.location.href = '/login';
                 return;
@@ -110,6 +121,28 @@ export default function Dashboard() {
             }
         } catch (error) {
             console.error('Update failed', error);
+        } finally {
+            setUpdating(false);
+        }
+    };
+
+    const handleProfileUpdate = async () => {
+        setUpdating(true);
+        try {
+            const res = await fetch('/api/users/me', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(profileForm),
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setUser({ ...user, ...profileForm });
+                setIsEditingProfile(false);
+            } else {
+                console.error('Update failed');
+            }
+        } catch (error) {
+            console.error('Update failed:', error);
         } finally {
             setUpdating(false);
         }
@@ -177,19 +210,64 @@ export default function Dashboard() {
                         <div className="h-20 w-20 bg-red-100 rounded-full flex items-center justify-center text-red-600 shrink-0">
                             <User size={36} />
                         </div>
-                        <div>
-                            <h1 className="text-2xl font-bold text-gray-900">{user.name}</h1>
-                            <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-gray-600">
-                                <span className="flex items-center gap-1"><Droplet size={14} className="text-red-500" /> {user.bloodGroup}</span>
-                                <span className="flex items-center gap-1"><MapPin size={14} /> {user.locationName || 'Unknown Location'}</span>
-                                <span className="flex items-center gap-1"><Phone size={14} /> {user.phone}</span>
-                                {notificationsEnabled && (
-                                    <span className="flex items-center gap-1 text-green-600 bg-green-50 px-2 rounded-full py-0.5" title="Notifications Enabled"><Bell size={12} /></span>
-                                )}
-                                <span className="capitalize px-2.5 py-0.5 rounded-full bg-gray-100 font-medium text-xs">
-                                    {user.role}
-                                </span>
-                            </div>
+                        <div className="flex-1 w-full">
+                            {isEditingProfile ? (
+                                <div className="space-y-3 w-full max-w-md">
+                                    <div>
+                                        <label className="text-xs text-gray-500 font-medium">Full Name</label>
+                                        <input type="text" value={profileForm.name} onChange={e => setProfileForm({...profileForm, name: e.target.value})} className="w-full text-sm border-gray-300 rounded-lg p-2 focus:ring-red-500 focus:border-red-500 bg-gray-50 border text-gray-900" />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-gray-500 font-medium">Email Address</label>
+                                        <input type="email" value={profileForm.email} onChange={e => setProfileForm({...profileForm, email: e.target.value})} className="w-full text-sm border-gray-300 rounded-lg p-2 focus:ring-red-500 focus:border-red-500 bg-gray-50 border text-gray-900" />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="text-xs text-gray-500 font-medium">Phone Number</label>
+                                            <input type="tel" value={profileForm.phone} onChange={e => setProfileForm({...profileForm, phone: e.target.value})} className="w-full text-sm border-gray-300 rounded-lg p-2 focus:ring-red-500 focus:border-red-500 bg-gray-50 border text-gray-900" />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-gray-500 font-medium">Blood Group</label>
+                                            <select value={profileForm.bloodGroup} onChange={e => setProfileForm({...profileForm, bloodGroup: e.target.value})} className="w-full text-sm border-gray-300 rounded-lg p-2 focus:ring-red-500 focus:border-red-500 bg-gray-50 border text-gray-900">
+                                                {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(bg => <option key={bg} value={bg}>{bg}</option>)}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-gray-500 font-medium">Location</label>
+                                        <input type="text" value={profileForm.locationName} onChange={e => setProfileForm({...profileForm, locationName: e.target.value})} className="w-full text-sm border-gray-300 rounded-lg p-2 focus:ring-red-500 focus:border-red-500 bg-gray-50 border text-gray-900" />
+                                    </div>
+                                    <div className="flex gap-2 pt-2">
+                                        <button onClick={handleProfileUpdate} disabled={updating} className="flex-1 bg-red-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-red-700 flex justify-center items-center gap-1 transition">
+                                            {updating ? <Loader2 className="animate-spin h-4 w-4" /> : <><Save size={14} /> Save Changes</>}
+                                        </button>
+                                        <button onClick={() => { setIsEditingProfile(false); setProfileForm({name: user.name || '', email: user.email || '', phone: user.phone || '', bloodGroup: user.bloodGroup || '', locationName: user.locationName || ''}); }} disabled={updating} className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 flex justify-center items-center gap-1 transition">
+                                            <X size={14} /> Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div>
+                                    <div className="flex items-center gap-3">
+                                        <h1 className="text-2xl font-bold text-gray-900">{user.name}</h1>
+                                        <button onClick={() => setIsEditingProfile(true)} className="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-md hover:bg-red-50" title="Edit Profile">
+                                            <Edit3 size={16} />
+                                        </button>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-gray-600">
+                                        <span className="flex items-center gap-1"><Mail size={14} /> {user.email || 'No Email'}</span>
+                                        <span className="flex items-center gap-1"><Droplet size={14} className="text-red-500" /> {user.bloodGroup}</span>
+                                        <span className="flex items-center gap-1"><MapPin size={14} /> {user.locationName || 'Unknown Location'}</span>
+                                        <span className="flex items-center gap-1"><Phone size={14} /> {user.phone}</span>
+                                        {notificationsEnabled && (
+                                            <span className="flex items-center gap-1 text-green-600 bg-green-50 px-2 rounded-full py-0.5" title="Notifications Enabled"><Bell size={12} /></span>
+                                        )}
+                                        <span className="capitalize px-2.5 py-0.5 rounded-full bg-gray-100 font-medium text-xs">
+                                            {user.role}
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
