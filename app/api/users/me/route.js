@@ -24,6 +24,11 @@ export async function PUT(request) {
             delete dbUpdate.isAvailable;
         }
 
+        if (dbUpdate.lastDonationDate !== undefined) {
+            dbUpdate.last_donation_date = dbUpdate.lastDonationDate;
+            delete dbUpdate.lastDonationDate;
+        }
+
         const { data: updatedProfile, error: updateError } = await supabase
             .from('users')
             .update(dbUpdate)

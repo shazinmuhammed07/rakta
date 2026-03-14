@@ -5,6 +5,15 @@ import { useRouter } from 'next/navigation';
 import { Activity, User, MapPin, Building2, Droplet, Hash, AlertTriangle, Loader2 } from 'lucide-react';
 import MapPicker from '@/components/MapPicker';
 
+const InputWrapper = ({ icon: Icon, children }) => (
+    <div className="mt-1 relative rounded-xl shadow-sm">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Icon className="h-5 w-5 text-gray-400" />
+        </div>
+        {children}
+    </div>
+);
+
 export default function SubmitRequest() {
     const [formData, setFormData] = useState({
         patientName: '',
@@ -57,14 +66,7 @@ export default function SubmitRequest() {
         }
     };
 
-    const InputWrapper = ({ icon: Icon, children }) => (
-        <div className="mt-1 relative rounded-xl shadow-sm">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Icon className="h-5 w-5 text-gray-400" />
-            </div>
-            {children}
-        </div>
-    );
+
 
     return (
         <div className="flex-1 bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">

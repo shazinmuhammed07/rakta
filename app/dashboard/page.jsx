@@ -13,6 +13,9 @@ export default function Dashboard() {
     const [updating, setUpdating] = useState(false);
     const [notificationsEnabled, setNotificationsEnabled] = useState(false);
     const [eligibilityData, setEligibilityData] = useState({ eligible: true, daysRemaining: 0 });
+    const [dashboardDonors, setDashboardDonors] = useState([]);
+    const [isEditingDate, setIsEditingDate] = useState(false);
+    const [newDonationDate, setNewDonationDate] = useState('');
 
     useEffect(() => {
         if (user && user.role === 'donor') {
@@ -76,6 +79,15 @@ export default function Dashboard() {
                 const reqData = await reqRes.json();
                 setRequests(reqData.requests);
             }
+
+            // Fetch donors if user is a requester
+            if (userData.user.role === 'requester') {
+                const donorsRes = await fetch('/api/users');
+                if (donorsRes.ok) {
+                    const donorsData = await donorsRes.json();
+                    setDashboardDonors(donorsData.donors);
+                }
+            }
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
         } finally {
@@ -94,7 +106,28 @@ export default function Dashboard() {
             });
             if (res.ok) {
                 const data = await res.json();
-                setUser(data.user);
+                setUser({ ...user, isAvailable: data.user.is_available });
+            }
+        } catch (error) {
+            console.error('Update failed', error);
+        } finally {
+            setUpdating(false);
+        }
+    };
+
+    const updateDonationDate = async () => {
+        if (!user || !newDonationDate) return;
+        setUpdating(true);
+        try {
+            const res = await fetch('/api/users/me', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lastDonationDate: newDonationDate }),
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setUser({ ...user, lastDonationDate: newDonationDate });
+                setIsEditingDate(false);
             }
         } catch (error) {
             console.error('Update failed', error);
@@ -164,11 +197,37 @@ export default function Dashboard() {
                         <div className="flex flex-col items-start md:items-end gap-3 w-full md:w-auto">
 
                             {/* Eligibility Badge */}
-                            <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${eligibilityData.eligible ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
-                                {eligibilityData.eligible ? <ShieldCheck size={18} /> : <ShieldAlert size={18} />}
-                                <div className="text-sm font-medium">
-                                    {eligibilityData.eligible ? 'Eligible to Donate' : `Next eligible in ${eligibilityData.daysRemaining} days`}
+                            <div className="flex flex-col items-end gap-2">
+                                <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${eligibilityData.eligible ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+                                    {eligibilityData.eligible ? <ShieldCheck size={18} /> : <ShieldAlert size={18} />}
+                                    <div className="text-sm font-medium">
+                                        {eligibilityData.eligible ? 'Eligible to Donate' : `Next eligible in ${eligibilityData.daysRemaining} days`}
+                                    </div>
                                 </div>
+                                <button 
+                                    onClick={() => setIsEditingDate(!isEditingDate)}
+                                    className="text-xs text-gray-400 hover:text-red-500 underline underline-offset-2 flex items-center gap-1 transition"
+                                >
+                                    <CalendarClock size={12} /> Update Date
+                                </button>
+                                {isEditingDate && (
+                                    <div className="bg-white border shadow-md p-3 rounded-xl flex items-center gap-2 mt-1 absolute z-10 right-0 top-16 md:right-auto md:top-auto">
+                                        <input 
+                                            type="date" 
+                                            className="text-sm border-gray-300 rounded-lg p-1.5 focus:ring-red-500 focus:border-red-500 bg-gray-50 text-gray-900 border"
+                                            value={newDonationDate}
+                                            onChange={(e) => setNewDonationDate(e.target.value)}
+                                            max={new Date().toISOString().split('T')[0]} // Prevents future dates
+                                        />
+                                        <button 
+                                            onClick={updateDonationDate}
+                                            disabled={updating}
+                                            className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition"
+                                        >
+                                            {updating ? <Loader2 className="animate-spin h-4 w-4" /> : 'Save'}
+                                        </button>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Availability Toggle */}
@@ -278,6 +337,61 @@ export default function Dashboard() {
                                                 </div>
                                             </div>
                                         )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="mt-12 mb-6 flex items-center justify-between">
+                            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                <User className="text-red-500" /> Available Donors in Network
+                            </h2>
+                        </div>
+
+                        {dashboardDonors.length === 0 ? (
+                            <div className="bg-white rounded-2xl p-12 text-center border border-gray-100 shadow-sm">
+                                <Activity className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+                                <h3 className="text-lg font-medium text-gray-900">No donors found</h3>
+                                <p className="mt-1 text-gray-500">There are currently no eligible donors matching the network criteria.</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                {dashboardDonors.map((donor) => (
+                                    <div key={donor.id || donor._id} className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow group flex flex-col h-full">
+                                        <div className="flex justify-between items-start mb-6">
+                                            <div className="h-12 w-12 bg-red-50 text-red-600 rounded-full flex items-center justify-center text-lg font-bold">
+                                                {donor.bloodGroup}
+                                            </div>
+                                            <span className="bg-green-50 text-green-700 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+                                                <div className="h-1.5 w-1.5 rounded-full bg-green-500"></div> Available
+                                            </span>
+                                        </div>
+
+                                        <h3 className="text-lg font-bold text-gray-900 mb-4 truncate">{donor.name}</h3>
+
+                                        <div className="space-y-3 mb-6 flex-1">
+                                            <div className="flex items-center text-sm text-gray-600 gap-3">
+                                                <div className="bg-gray-50 p-1.5 rounded-lg text-gray-400 group-hover:text-red-500 group-hover:bg-red-50 transition-colors">
+                                                    <MapPin size={16} />
+                                                </div>
+                                                <span className="truncate">{donor.location}</span>
+                                            </div>
+                                            <div className="flex items-center text-sm text-gray-600 gap-3">
+                                                <div className="bg-gray-50 p-1.5 rounded-lg text-gray-400 group-hover:text-red-500 group-hover:bg-red-50 transition-colors">
+                                                    <Phone size={16} />
+                                                </div>
+                                                <span>{donor.phone.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3')}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-auto">
+                                            <a
+                                                href={`tel:${donor.phone}`}
+                                                className="w-full block text-center py-3 bg-gray-50 text-gray-700 font-medium rounded-xl hover:bg-gray-900 hover:text-white transition-colors"
+                                            >
+                                                Contact Donor
+                                            </a>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
