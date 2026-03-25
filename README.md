@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+🩸 Rakta – Blood Donation Platform
 
-## Getting Started
+Rakta is a web-based blood donation platform designed to connect blood donors with people in urgent need of blood. The platform enables users to register as donors, search for available donors, and request blood easily and efficiently.
 
-First, run the development server:
+⸻
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+🚀 Problem Statement
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Finding blood during emergencies is often difficult due to:
+	•	Lack of centralized donor databases
+	•	Delays in communication
+	•	No real-time availability of donors
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+Rakta solves this problem by providing a fast, reliable, and user-friendly system to connect donors and recipients instantly.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+⸻
 
-## Learn More
+💡 Solution
 
-To learn more about Next.js, take a look at the following resources:
+Rakta provides:
+	•	A centralized donor database
+	•	Easy search & filter system
+	•	Quick blood request feature
+	•	Secure user authentication system
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+⸻
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+👥 Target Users
+	•	Blood donors
+	•	Patients / relatives in need
+	•	Hospitals / blood banks
 
-## Deploy on Vercel
+⸻
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+🔑 Key Features
+	•	📝 User Registration & Login
+	•	🩸 Donor Registration (Blood group, location, availability)
+	•	🔍 Search Donors by:
+	•	Blood group
+	•	Location
+	•	📩 Request Blood from donors
+	•	📱 Responsive UI (Mobile + Desktop)
+	•	🔐 Secure authentication system
+	•	📊 Admin panel (optional future feature)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+⸻
+
+🖥️ Tech Stack
+
+Frontend
+	•	HTML, CSS, JavaScript
+	•	(Optional: React / Next.js)
+
+Backend
+	•	Node.js / Express (or your choice)
+
+Database
+	•	Supabase (PostgreSQL)
+
+Other Tools
+	•	Git & GitHub
+	•	Hosting (Vercel / Netlify / Render)
+
+
+ 
